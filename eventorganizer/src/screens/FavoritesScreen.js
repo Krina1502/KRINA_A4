@@ -1,6 +1,5 @@
-// src/screens/FavoritesScreen.js
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,12 +26,26 @@ export default function FavoritesScreen() {
     setLoading(false);
   };
 
-  // This will run every time the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadFavorites();
     }, [])
   );
+
+  const confirmRemoveFavorite = (event) => {
+    Alert.alert(
+      "Remove from Favorites",
+      `Are you sure you want to remove "${event.title}" from your favorites?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Yes, Remove",
+          style: "destructive",
+          onPress: () => toggleFavorite(event),
+        }
+      ]
+    );
+  };
 
   const toggleFavorite = async (event) => {
     const eventRef = doc(db, 'events', event.id);
@@ -40,7 +53,7 @@ export default function FavoritesScreen() {
       await updateDoc(eventRef, {
         favorites: event.favorites.filter(uid => uid !== userId)
       });
-      // Refresh favorite events list instantly after removing
+      
       loadFavorites();
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -55,7 +68,7 @@ export default function FavoritesScreen() {
         <Text numberOfLines={1} ellipsizeMode="tail">{item.description}</Text>
       </View>
 
-      <TouchableOpacity onPress={() => toggleFavorite(item)} style={{ paddingLeft: 10 }}>
+      <TouchableOpacity onPress={() => confirmRemoveFavorite(item)} style={{ paddingLeft: 10 }}>
         <Ionicons name="heart" size={28} color="#ff5c5c" />
       </TouchableOpacity>
     </View>
